@@ -127,7 +127,7 @@ Player.prototype.add = function(_x, _y, _keys) {
 	var player = {
 		x: _x, // narazie ustawione na pałe ;s
 		y: _y, // tak samo tutaj
-		isJumping: false,
+		isJumping: true,
 		jumpVelocity: 0,
 		jumpVelocityDefault: this.jumpVelocityDefault,
 		gravity: this.gravityDefault,
@@ -249,10 +249,6 @@ Player.prototype.update = function() {
 
 
 		//automatyczne przesuwanie graczy na ruszajacych sie platformach
-			//jesli move === true
-		if (obj.currentPlatform != -1 && Game.platform.platforms[obj.currentPlatform].move === true) {
-			obj.x += Game.platform.defaultSpeed;
-		}
 			//jesli move === 'object'
 		if (obj.currentPlatform != -1 && typeof Game.platform.platforms[obj.currentPlatform].move === 'object') {
 			if (Game.platform.platforms[obj.currentPlatform].move.dir == Enum.RIGHT) {
@@ -476,18 +472,13 @@ Platform.prototype.deleteAll = function() {
 
 Platform.prototype.update = function() {
 	this.platforms.filter(function( obj ) {
-		if (obj.move == true) {
-			if (obj.x >= Game.window.width) {
-				obj.x = -obj.length;
-			}
-			obj.x += Game.platform.defaultSpeed;
-			
-		} else if (typeof obj.move === 'object') {
+		if (typeof obj.move === 'object') {
 			var _platformSpeed = obj.move.speed;
 
 			if (obj.move.dir == Enum.RIGHT) {
-				obj.x += _platformSpeed;
+					obj.x += _platformSpeed;
 				if (obj.move.to <= obj.x) {
+					obj.x += _platformSpeed;
 					obj.move.dir = Enum.LEFT;
 				}
 			}
