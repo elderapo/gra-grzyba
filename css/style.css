@@ -1,15 +1,10 @@
-body {
-	background-color: black;
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	height: 100%;
-}
+* { margin: 0; padding: 0;}
+
+body, html { height:100%; }
 
 .game-field {
-	height: 500px;
-	width: 800px;
-	margin: 0 auto;
+	//height: 100%;
+	//width: 100%;
 }
 
 .vertical-center {
@@ -21,4 +16,7 @@ body {
 
 canvas {
 	background: #dddddd;
+    position:absolute;
+    width:100%;
+    height:100%;
 }

@@ -12,6 +12,7 @@ var Key = {
 	A: 65,
 	D: 68,
 	SPACE: 32,
+	M: 77,
 
 	isDown: function(keyCode) {
 		return this._pressed[keyCode];
@@ -36,8 +37,12 @@ var Game = {
 	fps: 100,
 	tps: 50,
 	window: {
-		width: 800,
+		width: window.innerWidth,
+		height: window.innerHeight,
+		world: {
+		width: 1000,
 		height: 500	
+		}
 	},
 	map: {
 		width: 1600,
@@ -62,7 +67,7 @@ Game.init = function() {
 
 	this.player = new Player();
 	//this.player.add(400, 500, {UP: Key.UP, DOWN: Key.DOWN, LEFT: Key.LEFT, RIGHT: Key.RIGHT, SPECIAL: Key.SPACE2});
-	this.player.add(300, 330, {UP: Key.W, DOWN: Key.S, LEFT: Key.A, RIGHT: Key.D, SPECIAL: Key.SPACE});
+	this.player.add(300, 330, {UP: Key.W, DOWN: Key.S, LEFT: Key.A, RIGHT: Key.D, SPECIAL: Key.SPACE, MAPKEY: Key.M});
 
 	this.platform = new Platform();
 	this.platform.add(450, 10, 300);
@@ -71,13 +76,20 @@ Game.init = function() {
 	this.platform.add(330, 200, 300, {from: 300, to: 400, dir: Enum.RIGHT, speed: 2});
 	this.platform.add(450, 900, 200);
 
-	Game.hookControls();
+	this.minimap = new Minimap();
+	this.border = new Border();
+
+	this.hookControls();
 };
 
-var animFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
-				window.oRequestAnimationFrame || window.msRequestAnimationFrame || null;
 
 Game.start = function() {
+	var animFrame = window.requestAnimationFrame ||
+					window.webkitRequestAnimationFrame ||
+					window.mozRequestAnimationFrame ||
+					window.oRequestAnimationFrame ||
+					window.msRequestAnimationFrame ||
+					null;
 	Game.mainLoop();
 	animFrame(Game.start);
 };
@@ -93,9 +105,29 @@ Game.hookControls = function() {
 };
 
 Game.draw = function() {
-	Game.context.clearRect(0, 0, Game.window.width, Game.window.height);
+	Game.context.fillStyle = "pink";
+	///// rysowanie tla
+
+	Game.context.drawImage(
+		Game.sprites.background,
+		0 + (0.5 * Game.map.offset.x),
+		0 + (0.5 * Game.map.offset.y),
+		800,
+		600,
+		0,
+		0,
+		Game.map.width,
+		560
+	);
+
+	//Game.context.fillRect(0, 0, this.window.width, this.window.height);
 	Game.platform.draw(Game.context);
 	Game.player.draw(Game.context);
+	Game.minimap.draw(Game.context);
+	Game.border.draw(Game.context);
+	//czyszczenie wszystkiego poza gra >>> \/ \/ \/ \/  eq + chat
+	Game.context.clearRect(this.window.world.width+1, 0, this.window.width, this.window.height);
+	Game.context.clearRect(0, this.window.world.height+1, this.window.width, this.window.height);
 };
 
 Game.update = function() {
@@ -108,6 +140,8 @@ function Sprites() {
 	this.coordinates = [ { "spr": [ { "_frame": "0", "_x": "0", "_y": "0", "_w": "57", "_h": "141" }, { "_frame": "1", "_x": "0", "_y": "282", "_w": "53", "_h": "142" }, { "_frame": "2", "_x": "57", "_y": "0", "_w": "68", "_h": "135" }, { "_frame": "3", "_x": "57", "_y": "135", "_w": "67", "_h": "139" }, { "_frame": "4", "_x": "57", "_y": "274", "_w": "63", "_h": "138" }, { "_frame": "5", "_x": "125", "_y": "0", "_w": "71", "_h": "141" }, { "_frame": "6", "_x": "196", "_y": "0", "_w": "77", "_h": "137" }, { "_frame": "7", "_x": "57", "_y": "412", "_w": "66", "_h": "137" } ], "_name": "moveRight" }, { "spr": [ { "_frame": "0", "_x": "0", "_y": "141", "_w": "57", "_h": "141" }, { "_frame": "1", "_x": "0", "_y": "424", "_w": "53", "_h": "142" }, { "_frame": "2", "_x": "57", "_y": "549", "_w": "68", "_h": "135" }, { "_frame": "3", "_x": "273", "_y": "0", "_w": "67", "_h": "139" }, { "_frame": "4", "_x": "340", "_y": "0", "_w": "63", "_h": "138" }, { "_frame": "5", "_x": "125", "_y": "141", "_w": "71", "_h": "142" }, { "_frame": "6", "_x": "403", "_y": "0", "_w": "78", "_h": "137" }, { "_frame": "7", "_x": "481", "_y": "0", "_w": "67", "_h": "137" } ], "_name": "moveLeft" }, { "spr": [ { "_frame": "0", "_x": "548", "_y": "0", "_w": "58", "_h": "137" }, { "_frame": "1", "_x": "606", "_y": "0", "_w": "58", "_h": "136" }, { "_frame": "2", "_x": "125", "_y": "283", "_w": "58", "_h": "136" }, { "_frame": "3", "_x": "125", "_y": "419", "_w": "58", "_h": "135" }, { "_frame": "4", "_x": "125", "_y": "554", "_w": "58", "_h": "135" }, { "_frame": "5", "_x": "196", "_y": "141", "_w": "58", "_h": "135" }, { "_frame": "6", "_x": "196", "_y": "276", "_w": "58", "_h": "135" }, { "_frame": "7", "_x": "196", "_y": "411", "_w": "58", "_h": "136" } ], "_name": "stayRight" }, { "spr": [ { "_frame": "0", "_x": "196", "_y": "547", "_w": "58", "_h": "137" }, { "_frame": "1", "_x": "254", "_y": "141", "_w": "58", "_h": "136" }, { "_frame": "2", "_x": "312", "_y": "141", "_w": "58", "_h": "136" }, { "_frame": "3", "_x": "370", "_y": "141", "_w": "58", "_h": "135" }, { "_frame": "4", "_x": "428", "_y": "141", "_w": "58", "_h": "135" }, { "_frame": "5", "_x": "486", "_y": "141", "_w": "58", "_h": "135" }, { "_frame": "6", "_x": "544", "_y": "141", "_w": "58", "_h": "135" }, { "_frame": "7", "_x": "602", "_y": "141", "_w": "58", "_h": "136" } ], "_name": "stayLeft" }, { "spr": [ { "_frame": "0", "_x": "254", "_y": "277", "_w": "62", "_h": "135" }, { "_frame": "1", "_x": "316", "_y": "277", "_w": "70", "_h": "140" }, { "_frame": "2", "_x": "316", "_y": "417", "_w": "69", "_h": "140" }, { "_frame": "3", "_x": "386", "_y": "277", "_w": "73", "_h": "129" }, { "_frame": "4", "_x": "459", "_y": "277", "_w": "73", "_h": "126" }, { "_frame": "5", "_x": "386", "_y": "406", "_w": "81", "_h": "139" }, { "_frame": "6", "_x": "386", "_y": "545", "_w": "81", "_h": "137" }, { "_frame": "7", "_x": "467", "_y": "406", "_w": "76", "_h": "140" } ], "_name": "jumpRight" }, { "spr": [ { "_frame": "0", "_x": "254", "_y": "412", "_w": "62", "_h": "135" }, { "_frame": "1", "_x": "316", "_y": "557", "_w": "70", "_h": "142" }, { "_frame": "2", "_x": "467", "_y": "546", "_w": "69", "_h": "140" }, { "_frame": "3", "_x": "532", "_y": "277", "_w": "73", "_h": "129" }, { "_frame": "4", "_x": "605", "_y": "277", "_w": "73", "_h": "126" }, { "_frame": "5", "_x": "543", "_y": "406", "_w": "81", "_h": "139" }, { "_frame": "6", "_x": "543", "_y": "545", "_w": "81", "_h": "137" }, { "_frame": "7", "_x": "624", "_y": "545", "_w": "76", "_h": "142" } ], "_name": "jumpLeft" } ];
 	this.img = new Image();
 	this.img.src = "images/run1.png";
+	this.background = new Image();
+	this.background.src = "images/background.png";
 };
 
 function Player() {
@@ -264,7 +298,7 @@ Player.prototype.update = function() {
 			//wyjazd za mape i pojawienie sie z 2 strony
 				//w prawo
 			if (obj.x > Game.map.width + (0.5 * obj.width)) {
-				//obj.x = Game.window.width - (0.5 * obj.width) -5;
+				//obj.x = Game.window.world.width - (0.5 * obj.width) -5;
 				obj.x = -(0.5 * obj.width);
 			}
 
@@ -284,27 +318,27 @@ Player.prototype.update = function() {
 				//w lewo
 			if (obj.x <= (0.5 * obj.width) + 5) {
 				obj.x = (0.5 * obj.width) + 5;
-				//obj.x = Game.window.width + (0.5 * obj.width);
+				//obj.x = Game.window.world.width + (0.5 * obj.width);
 			}
 			
 		}
 
 		// przesuwanie mapy
 			// na boki
-		if (obj.x < Game.window.width * 0.5) {
+		if (obj.x < Game.window.world.width * 0.5) {
 			Game.map.offset.x = 0;
-		} else if (obj.x > Game.map.width - Game.window.width * 0.5) {
-			Game.map.offset.x = Game.map.width - Game.window.width;
+		} else if (obj.x > Game.map.width - Game.window.world.width * 0.5) {
+			Game.map.offset.x = Game.map.width - Game.window.world.width;
 		} else {
-			Game.map.offset.x = obj.x - 0.5 * Game.window.width;
+			Game.map.offset.x = obj.x - 0.5 * Game.window.world.width;
 		}
 			// gora dol
-		if (obj.y < Game.window.height * 0.5) {
+		if (obj.y < Game.window.world.height * 0.5) {
 			Game.map.offset.y = 0;
-		} else if (obj.y > Game.map.height - Game.window.height * 0.5) {
-			Game.map.offset.y = Game.map.height - Game.window.height;
+		} else if (obj.y > Game.map.height - Game.window.world.height * 0.5) {
+			Game.map.offset.y = Game.map.height - Game.window.world.height;
 		} else {
-			Game.map.offset.y = obj.y - 0.5 * Game.window.height;
+			Game.map.offset.y = obj.y - 0.5 * Game.window.world.height;
 		}
 
 	});
@@ -313,6 +347,7 @@ Player.prototype.update = function() {
 
 Player.prototype.draw = function(context) {
 	var id = 0;
+	context.globalAlpha = 1;
 	this.players.filter(function( obj ) {
 		context.drawImage(
 			Game.sprites.img,
@@ -321,7 +356,7 @@ Player.prototype.draw = function(context) {
 			obj.width / obj.scale,
 			obj.height / obj.scale,
 			obj.x - (0.5 * obj.width) - Game.map.offset.x,
-			obj.y-obj.height - Game.map.offset.y,
+			obj.y-obj.height - Game.map.offset.y+1,
 			obj.width,
 			obj.height
 		);
@@ -346,7 +381,7 @@ Player.prototype.draw = function(context) {
 			context.fillText("action: " + obj.wutAmIdoin, 100* id + 10, 55, 100);
 			context.fillText("scale: " + obj.scale, 100* id + 10, 70, 100);
 			context.fillText("x/y: " + obj.x + "/" + obj.y, 100* id + 10, 85, 100);
-			context.fillText("przesuniecie " + Game.map.offset.x + " / " + Game.map.offset.y, 100* id + 10, 100, 100);
+			context.fillText("przesuniecie " + Game.map.offset.x + " / " + Game.map.offset.y + " ", Game.window.world.width-150, 25);
 		}
 
 		obj.tickCount++;
@@ -413,6 +448,11 @@ Player.prototype.control = function() {
 		if (Key.isDown(obj.keys.LEFT) && Key.isDown(obj.keys.RIGHT)) {
 			Game.player.action('blockMove', obj);
 		} else {
+			if (Key.isDown(obj.keys.MAPKEY)) {
+				Game.minimap.toggle = true;
+			} else {
+				Game.minimap.toggle = false;
+			}
 
 			if (Key.isDown(obj.keys.UP)) {
 				Game.player.action('jump', obj);
@@ -493,8 +533,10 @@ Platform.prototype.update = function() {
 	});
 };
 
+
 Platform.prototype.draw = function(context) {
 	var id = 0;
+	context.globalAlpha = 1;
 	this.platforms.filter(function( obj ) {
 		context.fillStyle = "black";
 		context.fillRect(obj.x - Game.map.offset.x, obj.y - Game.map.offset.y, obj.length, 5);
@@ -509,3 +551,26 @@ Platform.prototype.draw = function(context) {
 		id++;
 	});
 };
+
+function Minimap() {
+	this.toggle = true;
+}
+
+Minimap.prototype.draw = function(context) {
+	if (Game.minimap.toggle) {
+	//if (true) {
+		context.globalAlpha = 0.5;
+		context.fillRect(50, 50, 700, 400);
+	}
+}
+
+function Border() {
+
+}
+
+Border.prototype.draw = function(context) {
+	//prawy
+	context.fillRect(Game.window.world.width, 0, 1, Game.window.world.height+1);
+	//dolny
+	context.fillRect(0, Game.window.world.height, Game.window.world.width+1, 1);
+}
