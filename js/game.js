@@ -35,14 +35,24 @@ var Game = {
 	debug: true,
 	fps: 100,
 	tps: 50,
-	width: 800,
-	height: 500
+	window: {
+		width: 800,
+		height: 500	
+	},
+	map: {
+		width: 1600,
+		height: 520,
+		offset: {
+			x: 0,
+			y: 0
+		}
+	}
 };
 
 Game.init = function() {
 	this.canvas = document.createElement("canvas");
-	this.canvas.width = this.width;
-	this.canvas.height = this.height;
+	this.canvas.width = this.window.width;
+	this.canvas.height = this.window.height;
 
 	this.context = this.canvas.getContext("2d");
 
@@ -51,15 +61,15 @@ Game.init = function() {
 	this.sprites = new Sprites();
 
 	this.player = new Player();
-	this.player.add(400, 500, {UP: Key.W, DOWN: Key.S, LEFT: Key.A, RIGHT: Key.D, SPECIAL: Key.SPACE});
-	this.player.add(400, 500, {UP: Key.UP, DOWN: Key.DOWN, LEFT: Key.LEFT, RIGHT: Key.RIGHT, SPECIAL: Key.SPACE2});
+	//this.player.add(400, 500, {UP: Key.UP, DOWN: Key.DOWN, LEFT: Key.LEFT, RIGHT: Key.RIGHT, SPECIAL: Key.SPACE2});
+	this.player.add(300, 330, {UP: Key.W, DOWN: Key.S, LEFT: Key.A, RIGHT: Key.D, SPECIAL: Key.SPACE});
 
 	this.platform = new Platform();
 	this.platform.add(450, 10, 300);
 	this.platform.add(400, 500, 100);
 	this.platform.add(450, 500, 100);
 	this.platform.add(330, 200, 300, {from: 300, to: 400, dir: Enum.RIGHT, speed: 2});
-	this.platform.add(350, 20, 200, true);
+	this.platform.add(450, 900, 200);
 
 	Game.hookControls();
 };
@@ -83,14 +93,14 @@ Game.hookControls = function() {
 };
 
 Game.draw = function() {
-	Game.context.clearRect(0, 0, Game.width, Game.height);
+	Game.context.clearRect(0, 0, Game.window.width, Game.window.height);
 	Game.platform.draw(Game.context);
 	Game.player.draw(Game.context);
 };
 
 Game.update = function() {
-	Game.player.update();
 	Game.player.control();
+	Game.player.update();
 	Game.platform.update();
 };
 
@@ -134,7 +144,7 @@ Player.prototype.add = function(_x, _y, _keys) {
 		currentlyUsedSprite: null,
 		currentPlatform: -1,
 		scale: this.defaultScale,
-		goThroughWalls: true
+		goThroughWalls: false
 	}
 	this.players.push(player);
 };
@@ -201,11 +211,11 @@ Player.prototype.update = function() {
 			if (obj.y <= obj.height) {
 				obj.y = obj.height;
 				obj.jumpVelocity = 0;
-			} else if (obj.y >= Game.height) {
-				obj.y = Game.height;
+			} else if (obj.y >= Game.map.height) {
+				obj.y = Game.map.height;
 				obj.jumpVelocity = 0;
-				obj.isJumping = false;
 				obj.ignorePlatforms = false;
+				obj.isJumping = false;
 			}
 		}
 
@@ -233,7 +243,7 @@ Player.prototype.update = function() {
 
 		}
 
-		if (obj.y!= Game.height & obj.falling >= platforms.length) {
+		if (obj.y < Game.map.height & obj.falling >= platforms.length) {
 			obj.isJumping = true;
 		}
 
@@ -257,30 +267,48 @@ Player.prototype.update = function() {
 		if (obj.goThroughWalls == true) {
 			//wyjazd za mape i pojawienie sie z 2 strony
 				//w prawo
-			if (obj.x > Game.width + (0.5 * obj.width)) {
-				//obj.x = Game.width - (0.5 * obj.width) -5;
+			if (obj.x > Game.map.width + (0.5 * obj.width)) {
+				//obj.x = Game.window.width - (0.5 * obj.width) -5;
 				obj.x = -(0.5 * obj.width);
 			}
 
 				//w lewo
 			if (obj.x < (-obj.width)) {
 				//obj.x = (0.5 * obj.width) + 5;
-				obj.x = Game.width + (0.5 * obj.width);
+				obj.x = Game.map.width + (0.5 * obj.width);
 			}
 		} else {
 			//zabezpieczenie przed wyjazdem za mape XDD
 				//w prawo
-			if (obj.x >= Game.width - (0.5 * obj.width) - 5) {
-				obj.x = Game.width - (0.5 * obj.width) -5;
+			if (obj.x >= Game.map.width - (0.5 * obj.width) - 5) {
+				obj.x = Game.map.width - (0.5 * obj.width) -5;
 				//obj.x = -(0.5 * obj.width);
 			}
 
 				//w lewo
 			if (obj.x <= (0.5 * obj.width) + 5) {
 				obj.x = (0.5 * obj.width) + 5;
-				//obj.x = Game.width + (0.5 * obj.width);
+				//obj.x = Game.window.width + (0.5 * obj.width);
 			}
 			
+		}
+
+		// przesuwanie mapy
+			// na boki
+		if (obj.x < Game.window.width * 0.5) {
+			Game.map.offset.x = 0;
+		} else if (obj.x > Game.map.width - Game.window.width * 0.5) {
+			Game.map.offset.x = Game.map.width - Game.window.width;
+		} else {
+			Game.map.offset.x = obj.x - 0.5 * Game.window.width;
+		}
+			// gora dol
+		if (obj.y < Game.window.height * 0.5) {
+			Game.map.offset.y = 0;
+		} else if (obj.y > Game.map.height - Game.window.height * 0.5) {
+			Game.map.offset.y = Game.map.height - Game.window.height;
+		} else {
+			Game.map.offset.y = obj.y - 0.5 * Game.window.height;
 		}
 
 	});
@@ -290,7 +318,17 @@ Player.prototype.update = function() {
 Player.prototype.draw = function(context) {
 	var id = 0;
 	this.players.filter(function( obj ) {
-		context.drawImage(Game.sprites.img, Game.sprites.coordinates[obj.currentlyUsedSprite].spr[obj.spriteFrame]._x, Game.sprites.coordinates[obj.currentlyUsedSprite].spr[obj.spriteFrame]._y, obj.width / obj.scale, obj.height / obj.scale, obj.x - (0.5 * obj.width), obj.y-obj.height, obj.width, obj.height);
+		context.drawImage(
+			Game.sprites.img,
+			Game.sprites.coordinates[obj.currentlyUsedSprite].spr[obj.spriteFrame]._x,
+			Game.sprites.coordinates[obj.currentlyUsedSprite].spr[obj.spriteFrame]._y,
+			obj.width / obj.scale,
+			obj.height / obj.scale,
+			obj.x - (0.5 * obj.width) - Game.map.offset.x,
+			obj.y-obj.height - Game.map.offset.y,
+			obj.width,
+			obj.height
+		);
 		
 		if (Game.debug == true) {
 			if (obj.isMoving == true) {
@@ -303,14 +341,16 @@ Player.prototype.draw = function(context) {
 			};
 			context.fillStyle = "black";
 			context.lineWidth = 2;
-			context.strokeRect(obj.x - (0.5 * obj.width), obj.y-obj.height, obj.width, obj.height);
-			context.strokeRect(obj.x, obj.y, 0, -5);
+			context.strokeRect(obj.x - (0.5 * obj.width) - Game.map.offset.x, obj.y-obj.height - Game.map.offset.y, obj.width, obj.height);
+			context.strokeRect(obj.x - Game.map.offset.x, obj.y - Game.map.offset.y, 0, -5);
 			context.font = "12px Arial";
-			context.fillText("x " + obj.x + " y:" + obj.y + ".." + obj.spriteFrame + ".." + obj.currentPlatform, obj.x - (0.5 * obj.width) +2, obj.y-obj.height-5);
+			context.fillText("x " + obj.x + " y:" + obj.y + ".." + obj.spriteFrame + ".." + obj.currentPlatform, obj.x - (0.5 * obj.width) +2 - Game.map.offset.x, obj.y-obj.height-5 - Game.map.offset.y);
 			context.fillText("ID: " + id, 100* id + 10, 25, 100);
 			context.fillText("sFrame" + obj.spriteFrame, 100* id + 10, 40, 100);
 			context.fillText("action: " + obj.wutAmIdoin, 100* id + 10, 55, 100);
 			context.fillText("scale: " + obj.scale, 100* id + 10, 70, 100);
+			context.fillText("x/y: " + obj.x + "/" + obj.y, 100* id + 10, 85, 100);
+			context.fillText("przesuniecie " + Game.map.offset.x + " / " + Game.map.offset.y, 100* id + 10, 100, 100);
 		}
 
 		obj.tickCount++;
@@ -362,6 +402,7 @@ Player.prototype.action = function(_action, _obj) {
 		console.log('not programed yet Kappa');
 		_obj.jumpVelocity = 0;
 		_obj.isJumping = false;
+		_obj.y -= 10;
 	}
 
 	if (_action === "jumpOnPlatforms") {
@@ -436,7 +477,7 @@ Platform.prototype.deleteAll = function() {
 Platform.prototype.update = function() {
 	this.platforms.filter(function( obj ) {
 		if (obj.move == true) {
-			if (obj.x >= Game.width) {
+			if (obj.x >= Game.window.width) {
 				obj.x = -obj.length;
 			}
 			obj.x += Game.platform.defaultSpeed;
@@ -465,14 +506,14 @@ Platform.prototype.draw = function(context) {
 	var id = 0;
 	this.platforms.filter(function( obj ) {
 		context.fillStyle = "black";
-		context.fillRect(obj.x, obj.y, obj.length, 5);
+		context.fillRect(obj.x - Game.map.offset.x, obj.y - Game.map.offset.y, obj.length, 5);
 		if (Game.debug == true) {
 			context.font = "12px Arial";
-			context.fillText("x" + obj.x + " y" + obj.y + " id" + id, obj.x+5 , obj.y-3);
+			context.fillText("x" + obj.x + " y" + obj.y + " id" + id, obj.x+5 - Game.map.offset.x, obj.y-3 - Game.map.offset.y);
 			context.fillStyle = "blue";
-			context.fillRect(obj.x+0, obj.y - 10, 4, 25);
+			context.fillRect(obj.x+0 - Game.map.offset.x, obj.y - 10 - Game.map.offset.y, 4, 25);
 			context.fillStyle = "orange";
-			context.fillRect(obj.x + obj.length-4, obj.y - 10, 4, 25);
+			context.fillRect(obj.x + obj.length-4 - Game.map.offset.x, obj.y - 10 - Game.map.offset.y, 4, 25);
 		}
 		id++;
 	});
